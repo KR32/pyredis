@@ -37,6 +37,9 @@ class RedisClientApp(QMainWindow):
         self.connection_dialog = ConnectionDialog()
         self.dark_theme_enabled = False
 
+        # Flag that indicates the value layout is in edit mode.
+        self.edit_mode = False
+
         self.init_connection()
 
         self.init_ui()
@@ -121,7 +124,7 @@ class RedisClientApp(QMainWindow):
             else:
                 QMessageBox.critical(self, "Delete Key", "No Redis connection established")
 
-    def list_keys(self):
+    def list_keys(self, edit_button):
         self.value_display.setPlainText(f"Select any one of the keys from the  list to view the value")
         if self.redis_client:
             keys = self.redis_client.keys('*')
@@ -129,6 +132,9 @@ class RedisClientApp(QMainWindow):
             for key in keys:
                 key_str = key.decode('utf-8')  # Decode the bytes to a string
                 self.key_list.addItem(key_str)
+        
+        if self.edit_mode is True:
+            self.toggle_edit_mode(edit_button)
 
     def get_value(self, item):
         key = item.text()
@@ -173,7 +179,7 @@ class RedisClientApp(QMainWindow):
             add_key_button.setIcon(QIcon("images/add.png"))
             edit_button = QToolButton()
             edit_button.setToolTip("Save changes")
-            edit_button.setIcon(QIcon("images/save.png"))
+            edit_button.setIcon(QIcon("images/edit.png"))
             delete_button = QToolButton()
             delete_button.setToolTip("Delete Key")
             delete_button.setIcon(QIcon("images/bin.png"))
@@ -183,10 +189,9 @@ class RedisClientApp(QMainWindow):
 
             # Connect button actions
             add_key_button.clicked.connect(self.add_key)
-            edit_button.clicked.connect(self.edit_value)
+            edit_button.clicked.connect(lambda: self.toggle_edit_mode(edit_button))
             delete_button.clicked.connect(self.delete_value)
-            refresh_button.clicked.connect(self.list_keys)
-           
+            refresh_button.clicked.connect(lambda: self.list_keys(edit_button))
             value_buttons_layout.addWidget(add_key_button)
             value_buttons_layout.addSpacing(10)
             value_buttons_layout.addWidget(edit_button)
@@ -206,7 +211,7 @@ class RedisClientApp(QMainWindow):
             self.central_widget.setLayout(layout)
 
             # List all keys and connect click event
-            self.list_keys()
+            self.list_keys(edit_button)
             self.key_list.itemClicked.connect(self.get_value)
 
     def toggle_dark_theme(self):
@@ -216,6 +221,23 @@ class RedisClientApp(QMainWindow):
         else:
             app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
             self.dark_theme_enabled = True
+            
+    def toggle_edit_mode(self, edit_button):
+        if self.edit_mode:
+            edit_button.setIcon(QIcon("images/edit.png"))
+            edit_button.setText("Edit")  # Change button text
+        
+            # Save changes
+            self.edit_value()
+            self.value_display.setReadOnly(True)  # Set to read-only
+        else:
+            # Enter edit mode
+            edit_button.setIcon(QIcon("images/save.png"))
+            edit_button.setText("Save")  # Change button text
+            self.value_display.setReadOnly(False)  # Allow editing
+
+        # Toggle the mode
+        self.edit_mode = not self.edit_mode
 
     def create_menu_bar(self):
         menubar = self.menuBar()
