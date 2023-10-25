@@ -37,6 +37,8 @@ class RedisClientApp(QMainWindow):
         self.connection_dialog = ConnectionDialog()
         self.dark_theme_enabled = False
 
+        self.toggle_dark_theme()
+
         # Flag that indicates the value layout is in edit mode.
         self.edit_mode = False
 
@@ -216,9 +218,11 @@ class RedisClientApp(QMainWindow):
 
     def toggle_dark_theme(self):
         if self.dark_theme_enabled:
+            self.connection_dialog.setStyleSheet('')
             app.setStyleSheet('')
             self.dark_theme_enabled = False
         else:
+            self.connection_dialog.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
             app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
             self.dark_theme_enabled = True
             
@@ -251,9 +255,6 @@ class RedisClientApp(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = RedisClientApp()
-
-    # Enable dark theme by default
-    window.toggle_dark_theme()
 
     window.show()
 
